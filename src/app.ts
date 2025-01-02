@@ -1,1 +1,1 @@
-console.log('Hello World')
+// SINGLE PAGE APPLICATION
