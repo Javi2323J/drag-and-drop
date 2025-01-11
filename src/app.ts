@@ -1,12 +1,8 @@
-// SINGLE PAGE APPLICATION
-
-// First step ==> make the html templates visible
-
 // Project Type
 enum ProjectStatus { Active, Finished }
 
 class Project {
-    constructor(public id: string, public title: string, public description: string, people: number, public status: ProjectStatus) { }
+    constructor(public id: string, public title: string, public description: string, public people: number, public status: ProjectStatus) { }
 }
 
 // Project State Management
@@ -34,6 +30,7 @@ class ProjectState extends State<Project> {
         }
 
         this.instance = new ProjectState()
+
         return this.instance
     }
 
@@ -51,7 +48,7 @@ class ProjectState extends State<Project> {
 const projectState = ProjectState.getInstance()
 
 // Validation
-interface Validatable { // interface instead of type beacause we want to define the structure of an object
+interface Validatable {
     value: string | number
     required?: boolean
     minLength?: number
@@ -82,11 +79,13 @@ function validate(validatableInput: Validatable) {
     return isValid
 }
 
-// autobind decorator
+// Autobind decorator
 function Autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value
+
     const adjDescriptor: PropertyDescriptor = {
         configurable: true,
+
         get() {
             const boundFn = originalMethod.bind(this)
 
@@ -103,13 +102,18 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     hostElement: T
     element: U
 
-    constructor(templateId: string, hostElementId: string, insertAtStart: boolean, newElementId?: string) {
-        this.templateElement = document.getElementById('project-list') as HTMLTemplateElement
-        this.hostElement = document.getElementById(hostElementId) as T
+    constructor(
+        templateId: string, hostElementId: string, insertAtStart: boolean, newElementId?: string) {
+        this.templateElement = document.getElementById(templateId)! as HTMLTemplateElement
+        this.hostElement = document.getElementById(hostElementId)! as T
 
-        const importedNode = document.importNode(this.templateElement.content, true)
+        const importedNode = document.importNode(
+            this.templateElement.content,
+            true
+        )
 
         this.element = importedNode.firstElementChild as U
+
         if (newElementId) {
             this.element.id = newElementId
         }
@@ -125,30 +129,37 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     abstract renderContent(): void
 }
 
+// ProjectItem Class
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+    private project: Project
+
+    constructor(hostId: string, project: Project) {
+        super('single-project', hostId, false, project.id)
+        this.project = project
+
+        this.configure()
+        this.renderContent()
+    }
+
+    configure() { }
+
+    renderContent() {
+        this.element.querySelector('h2')!.textContent = this.project.title
+        this.element.querySelector('h3')!.textContent = this.project.people.toString()
+        this.element.querySelector('p')!.textContent = this.project.description
+    }
+}
+
 // ProjectList Class
 class ProjectList extends Component<HTMLDivElement, HTMLElement> {
     assignedProjects: Project[]
 
     constructor(private type: 'active' | 'finished') {
         super('project-list', 'app', false, `${type}-projects`)
-
         this.assignedProjects = []
 
         this.configure()
         this.renderContent()
-    }
-
-    private renderProjects() {
-        const listEl = document.getElementById(`${this.type}-projects-list`) as HTMLUListElement
-
-        listEl.innerHTML = ''
-
-        for (const prjItem of this.assignedProjects) {
-            const listItem = document.createElement('li')
-            listItem.textContent = prjItem.title
-
-            listEl.appendChild(listItem)
-        }
     }
 
     configure() {
@@ -157,24 +168,34 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> {
                 if (this.type === 'active') {
                     return prj.status === ProjectStatus.Active
                 }
+
                 return prj.status === ProjectStatus.Finished
             })
 
             this.assignedProjects = relevantProjects
-
             this.renderProjects()
         })
     }
 
     renderContent() {
         const listId = `${this.type}-projects-list`
-        this.element.querySelector('ul')!.id = listId
 
-        this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + 'PROJECTS'
+        this.element.querySelector('ul')!.id = listId
+        this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS'
+    }
+
+    private renderProjects() {
+        const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement
+
+        listEl.innerHTML = ''
+
+        for (const prjItem of this.assignedProjects) {
+            new ProjectItem(this.element.querySelector('ul')!.id, prjItem)
+        }
     }
 }
 
-// ProjectInput class
+// ProjectInput Class
 class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
     titleInputElement: HTMLInputElement
     descriptionInputElement: HTMLInputElement
@@ -196,19 +217,19 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 
     renderContent() { }
 
-    private gatherUserInput(): [string, string, number] | void { // tuple or nothing
+    private gatherUserInput(): [string, string, number] | void {
         const enteredTitle = this.titleInputElement.value
         const enteredDescription = this.descriptionInputElement.value
         const enteredPeople = this.peopleInputElement.value
 
         const titleValidatable: Validatable = {
             value: enteredTitle,
-            required: true,
-            minLength: 5
+            required: true
         }
         const descriptionValidatable: Validatable = {
             value: enteredDescription,
-            required: true
+            required: true,
+            minLength: 5
         }
         const peopleValidatable: Validatable = {
             value: +enteredPeople,
@@ -240,15 +261,12 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 
         if (Array.isArray(userInput)) {
             const [title, desc, people] = userInput
-
             projectState.addProject(title, desc, people)
-
             this.clearInputs()
         }
     }
 }
 
 const prjInput = new ProjectInput()
-
 const activePrjList = new ProjectList('active')
 const finishedPrjList = new ProjectList('finished')
