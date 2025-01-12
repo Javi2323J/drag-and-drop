@@ -1,0 +1,19 @@
+{
+  "name": "drag-and-drop",
+  "version": "1.0.0",
+  "description": "Understanding Typescript udemy course Drag &amp; Drop project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "lite-server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "lite-server": "^2.6.1"
+  }
+}
